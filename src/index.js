@@ -14,7 +14,7 @@ const birdPerson = {
     localCanvasX: 10,
     localCanvasY: 50,
     velocity: 0,
-    gravity: 0.25,
+    gravity: 0.1,
     
     refresh(){
         birdPerson.velocity += birdPerson.gravity
@@ -89,14 +89,71 @@ const backGround = {
     }
 }
 
-function loop() {
-    birdPerson.refresh()
-    backGround.drawBackGround()
-    ground.drawGround()
-    birdPerson.drawBird()
+const initialWindow = {
+    spriteX: 134,
+    spriteY: 0,
+    widthInitialWindow: 174,
+    heightInitialWindow: 152,
+    localCanvasX: (canvas.width / 2) - 174 / 2,
+    localCanvasY: 50,
 
+    drawInitialWindow () {
+        context.drawImage(
+            sprites,
+            initialWindow.spriteX, initialWindow.spriteY, // sx, sy
+            initialWindow.widthInitialWindow, initialWindow.heightInitialWindow, // corte da imagem
+            initialWindow.localCanvasX, initialWindow.localCanvasY, // local no canvas
+            initialWindow.widthInitialWindow, initialWindow.heightInitialWindow, // tamanho no canvas
+        )
+    }
+}
+
+let activeWindow = {}
+
+function changeWindow(newWindow) {
+    activeWindow = newWindow
+}
+
+const windows = {
+    start: {
+        draw() {
+            backGround.drawBackGround()
+            ground.drawGround()
+            birdPerson.drawBird()
+            initialWindow.drawInitialWindow()
+        },
+        click() {
+        changeWindow(windows.game)
+        },
+        refresh() {
+
+        },
+    },
+    game: {
+        draw() {
+            backGround.drawBackGround()
+            ground.drawGround()
+            birdPerson.drawBird()
+        },
+        refresh() {
+            birdPerson.refresh()
+        },
+    }
+}
+
+function loop() {
+    activeWindow.draw()
+    activeWindow.refresh()
 
     requestAnimationFrame(loop)
 }
+
+window.addEventListener("click", ()=>{
+    if(activeWindow.click){
+        activeWindow.click()
+    }
+})
+
+changeWindow(windows.start)
 
 loop()
