@@ -9,6 +9,8 @@ soundGameOver.src = "./src/effects/gameover.wav"
 const canvas = document.querySelector("canvas")
 const context = canvas.getContext("2d")
 
+let frames = 0
+
 function colision (birdPerson, ground) {
     const birdY = birdPerson.localCanvasY + birdPerson.heightBird
     const groundY = ground.localCanvasY
@@ -37,7 +39,7 @@ function createBird() {
         },
         
         refresh(){
-            if(colision(birdPerson, ground)) {
+            if(colision(birdPerson, global.ground)) {
                 soundGameOver.play()
 
                 setTimeout (() => {
@@ -50,11 +52,29 @@ function createBird() {
             birdPerson.velocity += birdPerson.gravity
             birdPerson.localCanvasY += birdPerson.velocity
         },
-    
+        animationBird: [
+            {spriteX: 0, spriteY: 0},
+            {spriteX: 0, spriteY: 26},
+            {spriteX: 0, spriteY: 52},
+        ],
+        
+        actualFrame: 0,
+        refreshFrame() {
+            const intervalFrames = 20
+            const changeInterval = frames % intervalFrames === 0
+            if (changeInterval) {
+                const baseAdd = 1
+                const add = baseAdd + birdPerson.actualFrame
+                const baseRep = birdPerson.animationBird.length
+                birdPerson.actualFrame = add % baseRep
+            }
+        },
         drawBird () {
+            birdPerson.refreshFrame()
+            const {spriteX, spriteY} = birdPerson.animationBird[birdPerson.actualFrame]
             context.drawImage(
                 sprites,
-                birdPerson.spriteX, birdPerson.spriteY, // sx, sy
+                spriteX, spriteY, // sx, sy
                 birdPerson.widthBird, birdPerson.heightBird, // corte da imagem
                 birdPerson.localCanvasX, birdPerson.localCanvasY, // local no canvas
                 birdPerson.widthBird, birdPerson.heightBird, // tamanho no canvas
@@ -64,33 +84,42 @@ function createBird() {
     return birdPerson
 }
 
-
-const ground = {
-    spriteX: 0,
-    spriteY: 610,
-    widthGround: 224,
-    heightGround: 112,
-    localCanvasX: 0,
-    localCanvasY: canvas.height - 112,
-
-    drawGround () {
-        context.drawImage(
-            sprites,
-            ground.spriteX, ground.spriteY, // sx, sy
-            ground.widthGround, ground.heightGround, // corte da imagem
-            ground.localCanvasX, ground.localCanvasY, // local no canvas
-            ground.widthGround, ground.heightGround, // tamanho no canvas
-        )
-
-        context.drawImage(
-            sprites,
-            ground.spriteX, ground.spriteY, // sx, sy
-            ground.widthGround, ground.heightGround, // corte da imagem
-            (ground.localCanvasX + ground.widthGround), ground.localCanvasY, // local no canvas
-            ground.widthGround, ground.heightGround, // tamanho no canvas
-        )
+function createGround() {
+    const ground = {
+        spriteX: 0,
+        spriteY: 610,
+        widthGround: 224,
+        heightGround: 112,
+        localCanvasX: 0,
+        localCanvasY: canvas.height - 112,
+        refresh() {
+            const moveGround = 0.5
+            const repeat = ground.widthGround / 2
+            const moviment = ground.localCanvasX - moveGround
+    
+            ground.localCanvasX = moviment % repeat
+        },
+        drawGround () {
+            context.drawImage(
+                sprites,
+                ground.spriteX, ground.spriteY, // sx, sy
+                ground.widthGround, ground.heightGround, // corte da imagem
+                ground.localCanvasX, ground.localCanvasY, // local no canvas
+                ground.widthGround, ground.heightGround, // tamanho no canvas
+            )
+    
+            context.drawImage(
+                sprites,
+                ground.spriteX, ground.spriteY, // sx, sy
+                ground.widthGround, ground.heightGround, // corte da imagem
+                (ground.localCanvasX + ground.widthGround), ground.localCanvasY, // local no canvas
+                ground.widthGround, ground.heightGround, // tamanho no canvas
+            )
+        }
     }
+    return ground
 }
+
 
 const backGround = {
     spriteX: 390,
@@ -156,10 +185,11 @@ const windows = {
     start: {
         inicialization() {
             global.birdPerson = createBird()
+            global.ground = createGround()
         },
         draw() {
             backGround.drawBackGround()
-            ground.drawGround()
+            global.ground.drawGround()
             global.birdPerson.drawBird()
             initialWindow.drawInitialWindow()
         },
@@ -167,13 +197,13 @@ const windows = {
         changeWindow(windows.game)
         },
         refresh() {
-
+            global.ground.refresh()
         },
     },
     game: {
         draw() {
             backGround.drawBackGround()
-            ground.drawGround()
+            global.ground.drawGround()
             global.birdPerson.drawBird()
         },
         click() {
@@ -181,6 +211,7 @@ const windows = {
         },
         refresh() {
             global.birdPerson.refresh()
+            global.ground.refresh()
         },
     }
 }
@@ -189,6 +220,7 @@ function loop() {
     activeWindow.draw()
     activeWindow.refresh()
 
+    frames += 1
     requestAnimationFrame(loop)
 }
 
