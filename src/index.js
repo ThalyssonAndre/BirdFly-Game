@@ -3,34 +3,67 @@ console.log("A engrenagem está girando!")
 const sprites = new Image ()
 sprites.src = "./src/sprites.png"
 
+const soundGameOver = new Audio()
+soundGameOver.src = "./src/effects/gameover.wav"
+
 const canvas = document.querySelector("canvas")
 const context = canvas.getContext("2d")
 
-const birdPerson = {
-    spriteX: 0,
-    spriteY: 0,
-    widthBird: 33,
-    heightBird: 24,
-    localCanvasX: 10,
-    localCanvasY: 50,
-    velocity: 0,
-    gravity: 0.1,
-    
-    refresh(){
-        birdPerson.velocity += birdPerson.gravity
-        birdPerson.localCanvasY += birdPerson.velocity
-    },
+function colision (birdPerson, ground) {
+    const birdY = birdPerson.localCanvasY + birdPerson.heightBird
+    const groundY = ground.localCanvasY
 
-    drawBird () {
-        context.drawImage(
-            sprites,
-            birdPerson.spriteX, birdPerson.spriteY, // sx, sy
-            birdPerson.widthBird, birdPerson.heightBird, // corte da imagem
-            birdPerson.localCanvasX, birdPerson.localCanvasY, // local no canvas
-            birdPerson.widthBird, birdPerson.heightBird, // tamanho no canvas
-        )
+    if (birdY >= groundY) {
+        return true
     }
+
+    return false
 }
+
+function createBird() {
+    const birdPerson = {
+        spriteX: 0,
+        spriteY: 0,
+        widthBird: 33,
+        heightBird: 24,
+        localCanvasX: 10,
+        localCanvasY: 50,
+        birdJump: 2.5,
+        velocity: 0,
+        gravity: 0.05,
+    
+        jump() {
+            birdPerson.velocity = - birdPerson.birdJump
+        },
+        
+        refresh(){
+            if(colision(birdPerson, ground)) {
+                soundGameOver.play()
+
+                setTimeout (() => {
+                    changeWindow(windows.start)
+                }, 500)
+    
+                return
+            }
+    
+            birdPerson.velocity += birdPerson.gravity
+            birdPerson.localCanvasY += birdPerson.velocity
+        },
+    
+        drawBird () {
+            context.drawImage(
+                sprites,
+                birdPerson.spriteX, birdPerson.spriteY, // sx, sy
+                birdPerson.widthBird, birdPerson.heightBird, // corte da imagem
+                birdPerson.localCanvasX, birdPerson.localCanvasY, // local no canvas
+                birdPerson.widthBird, birdPerson.heightBird, // tamanho no canvas
+            )
+        }
+    }
+    return birdPerson
+}
+
 
 const ground = {
     spriteX: 0,
@@ -108,18 +141,26 @@ const initialWindow = {
     }
 }
 
+const global = {}
 let activeWindow = {}
 
 function changeWindow(newWindow) {
     activeWindow = newWindow
+
+    if(activeWindow.inicialization()) {
+        inicialization()
+    }
 }
 
 const windows = {
     start: {
+        inicialization() {
+            global.birdPerson = createBird()
+        },
         draw() {
             backGround.drawBackGround()
             ground.drawGround()
-            birdPerson.drawBird()
+            global.birdPerson.drawBird()
             initialWindow.drawInitialWindow()
         },
         click() {
@@ -133,10 +174,13 @@ const windows = {
         draw() {
             backGround.drawBackGround()
             ground.drawGround()
-            birdPerson.drawBird()
+            global.birdPerson.drawBird()
+        },
+        click() {
+            global.birdPerson.jump()
         },
         refresh() {
-            birdPerson.refresh()
+            global.birdPerson.refresh()
         },
     }
 }
