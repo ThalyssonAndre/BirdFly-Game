@@ -30,7 +30,7 @@ function createBird() {
         heightBird: 24,
         localCanvasX: 10,
         localCanvasY: 50,
-        birdJump: 2.5,
+        birdJump: 2,
         velocity: 0,
         gravity: 0.05,
     
@@ -120,6 +120,100 @@ function createGround() {
     return ground
 }
 
+function createPipes() {
+    const pipes = {
+        widthPipes: 52,
+        heightPipes: 400,
+        localCanvasX: 0,
+        localCanvasY: canvas.height - 112,
+        ground: {
+            spriteX: 0,
+            spriteY: 169,
+        },
+        sky: {
+            spriteX: 52,
+            spriteY: 169,
+        },
+        space: 80,
+        drawPipes () {
+            pipes.pairs.forEach(function (pair) {
+                const yRadom = pair.y
+                const spaceBetweenPipes = 90
+    
+                const pipesSkyX = pair.x
+                const pipesSkyY = yRadom
+                context.drawImage(
+                    sprites,
+                    pipes.sky.spriteX, pipes.sky.spriteY, // sx, sy
+                    pipes.widthPipes, pipes.heightPipes, // corte da imagem
+                    pipesSkyX, pipesSkyY, // local no canvas
+                    pipes.widthPipes, pipes.heightPipes, // tamanho no canvas
+                )
+                const pipesGroundX = pair.x
+                const pipesGroundY = pipes.heightPipes + spaceBetweenPipes + yRadom
+                context.drawImage(
+                    sprites,
+                    pipes.ground.spriteX, pipes.ground.spriteY, // sx, sy
+                    pipes.widthPipes, pipes.heightPipes, // corte da imagem
+                    pipesGroundX, pipesGroundY, // local no canvas
+                    pipes.widthPipes, pipes.heightPipes, // tamanho no canvas
+                )
+
+                pair.pipeSky = {
+                    x: pipesSkyX,
+                    y: pipes.heightPipes + pipesSkyY,
+                },
+                pair.pipeGround = {
+                    x: pipesGroundX,
+                    y: pipesGroundY,
+                }
+            })
+        },
+        haveColisionBird(pair) {
+            const headerBird = global.birdPerson.localCanvasY
+            const footerBird = global.birdPerson.localCanvasY + global.birdPerson.heightBird
+            if(global.birdPerson.localCanvasX >= pair.x) {
+                if(headerBird <= pair.pipeSky.y) {
+                    return true
+                }
+
+                if(footerBird >= pair.pipeGround.y) {
+                    return true
+                }
+            }
+            return false
+        },
+        pairs: [],
+        refresh() {
+            const passed100Frames = frames % 300 === 0
+            if(passed100Frames){
+               pipes.pairs.push({
+                x: canvas.width,
+                y: -150 * (Math.random() + 1),
+            }) 
+            }
+
+            pipes.pairs.forEach(function (pair) {
+                pair.x -= 0.75
+
+                if(pipes.haveColisionBird(pair)) {
+                    soundGameOver.play()
+                    setTimeout (() => {
+                        changeWindow(windows.start)
+                    }, 500)
+                }
+
+                if(pair.x + pipes.widthPipes <= 0) {
+                    pipes.pairs.shift()
+                }
+
+
+            })
+        }
+    }
+    return pipes
+}
+
 
 const backGround = {
     spriteX: 390,
@@ -186,11 +280,12 @@ const windows = {
         inicialization() {
             global.birdPerson = createBird()
             global.ground = createGround()
+            global.pipes = createPipes()
         },
         draw() {
             backGround.drawBackGround()
-            global.ground.drawGround()
             global.birdPerson.drawBird()
+            global.ground.drawGround()
             initialWindow.drawInitialWindow()
         },
         click() {
@@ -203,6 +298,7 @@ const windows = {
     game: {
         draw() {
             backGround.drawBackGround()
+            global.pipes.drawPipes()
             global.ground.drawGround()
             global.birdPerson.drawBird()
         },
@@ -210,6 +306,8 @@ const windows = {
             global.birdPerson.jump()
         },
         refresh() {
+            global.pipes.refresh()
+            global.ground.refresh()
             global.birdPerson.refresh()
             global.ground.refresh()
         },
