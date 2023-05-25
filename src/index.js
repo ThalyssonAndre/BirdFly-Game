@@ -200,7 +200,7 @@ function createPipes() {
                     soundGameOver.play()
                     setTimeout (() => {
                         changeWindow(windows.start)
-                    }, 500)
+                    }, 0)
                 }
 
                 if(pair.x + pipes.widthPipes <= 0) {
